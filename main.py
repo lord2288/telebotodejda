@@ -63,8 +63,9 @@ def pre3(message):
 
 def pre4(message):
     global zapros
-    zapros += f'в {message.text}'
+    zapros += f'в {message.text} '
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.row()
     bot.send_message(message.chat.id, 'напишите цвет одежды', reply_markup=markup)
     bot.register_next_step_handler(message, pre5)
 
