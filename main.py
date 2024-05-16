@@ -1,8 +1,64 @@
 import telebot
 from telebot import types
+import os
+import base64
+import requests
+import json
+import time
 
 key = '6751306928:AAFjUwlLjeMQWqBkauV1NbbXvvTnJRo4fGg'
 bot = telebot.TeleBot(key)
+
+def generate_image_from_text(prompt):
+    url = 'https://api-key.fusionbrain.ai/'
+    api_key = 'C620606DC592BF60C4462E27F5309E12'
+    secret_key = '40D31C36DFDBD37DD3C385A7B5C143B4'
+    auth_headers = {
+        'X-Key': f'Key {api_key}',
+        'X-Secret': f'Secret {secret_key}',
+    }
+
+    # Получаем ID модели
+    response = requests.get(f"{url}key/api/v1/models", headers=auth_headers)
+    response.raise_for_status()
+    model_id = response.json()[0]['id']
+
+    # Запрос на генерацию изображения
+    params = {
+        "type": "GENERATE",
+        "numImages": 1,
+        "width": 1024,
+        "height": 1024,
+        "generateParams": {"query": prompt}
+    }
+    data = {
+        'model_id': (None, model_id),
+        'params': (None, json.dumps(params), 'application/json')
+    }
+    response = requests.post(f"{url}key/api/v1/text2image/run", headers=auth_headers, files=data)
+    response.raise_for_status()
+    uuid = response.json()['uuid']
+
+    # Проверка статуса генерации
+    for _ in range(10):
+        response = requests.get(f"{url}key/api/v1/text2image/status/{uuid}", headers=auth_headers)
+        response.raise_for_status()
+        data = response.json()
+        if data['status'] == 'DONE':
+            images = data['images']
+            image_data = base64.b64decode(images[0])
+            filename = f"generated_image.jpg"
+            try:
+                with open(filename, "wb") as file:
+                    file.write(image_data)
+                print(f"Изображение успешно сохранено как {filename}")
+                return
+            except Exception as e:
+                print(f"Не удалось сохранить изображение: {e}")
+                return
+        time.sleep(10)
+    print("Не удалось сгенерировать изображение.")
+
 def pre1(message):
     global zapros
     zapros += f'белый фон на фоне человек в {message.text} одежде, '
@@ -86,7 +142,14 @@ def pre5(message):
 def pre6(message):
     global zapros
     zapros += f'а на ногах {message.text}'
-    bot.send_message(message.chat.id, zapros)
+    generate_image_from_text(zapros)
+    print(2)
+    send_picture(message)
+
+def send_picture(message):
+    filename = "generated_image.jpg"
+    with open(filename, "rb") as photo:
+        bot.send_photo(message.chat.id, photo)
 @bot.message_handler(commands=['start'])
 def start(message):
     global zapros
@@ -98,5 +161,19 @@ def start(message):
     markup.row(item1, item2)
     bot.send_message(message.chat.id, 'Здравствуйте, {0.first_name}!'.format(message.from_user), reply_markup=markup)
     bot.register_next_step_handler(message, pre1)
+
+
+@bot.message_handler(content_types=['photo'])
+def handle_photo(message):
+    # Получаем информацию о фотографии
+    file_id = message.photo[-1].file_id
+    file_info = bot.get_file(file_id)
+    file_path = file_info.file_path
+
+    # Скачиваем фотографию
+    downloaded_file = bot.download_file(file_path)
+
+    # Отправляем обратно фотографию
+    bot.send_photo(message.chat.id, downloaded_file)
 
 bot.polling(none_stop=True)
