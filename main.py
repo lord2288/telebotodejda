@@ -72,7 +72,10 @@ def pre0(message):
 
 def pre1(message):
     global zapros
-    zapros += f'белый фон на фоне человек в {message.text} одежде, '
+    if message.text == 'Мужская':
+        zapros += f'белый фон. на фоне мужчина в {message.text} одежде, '
+    elif message.text == 'Женская':
+        zapros += f'белый фон. на фоне женщина в {message.text} одежде, '
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     item1 = types.KeyboardButton('спортивный')
     item2 = types.KeyboardButton('клачический')
@@ -135,7 +138,6 @@ def pre4(message):
     bot.send_message(message.chat.id, 'напишите цвет одежды', reply_markup=markup)
     bot.register_next_step_handler(message, pre5)
 
-
 def pre5(message):
     global zapros
     zapros += f'цвет этой одежды {message.text} '
@@ -156,20 +158,29 @@ def pre6(message):
     bot.send_message(message.chat.id, 'Подождите немного', reply_markup=markup)
     generate_image_from_text(zapros)
     send_picture(message)
-    zapros = ''
-    bot.send_message(message.chat.id, 'Здравствуйте, {0.first_name}!'.format(message.from_user))
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    item1 = types.KeyboardButton('Мужская')
-    item2 = types.KeyboardButton('Женская')
+    item1 = types.KeyboardButton('перегенерировать')
+    item2 = types.KeyboardButton('задать вид заново')
     markup.row(item1, item2)
-    bot.send_message(message.chat.id, 'Выберите пол.'.format(message.from_user), reply_markup=markup)
-    bot.register_next_step_handler(message, pre1)
+    bot.send_message(message.chat.id, 'Выберите действие.'.format(message.from_user), reply_markup=markup)
+
+def pre7(message):
+    global zapros
+    if message.text == 'перегенерировать':
+        markup = types.ReplyKeyboardRemove()
+        bot.send_message(message.chat.id, 'Подождите немного', reply_markup=markup)
+        generate_image_from_text(zapros)
+        send_picture(message)
+    elif message.text == 'задать вид заново':
+        zapros = ''
+        bot.register_next_step_handler(message, pre0)
+
 
 def send_picture(message):
     filename = "generated_image.jpg"
     with open(filename, "rb") as photo:
         bot.send_photo(message.chat.id, photo)
-        bot.register_next_step_handler(message, pre0)
+
 
 @bot.message_handler(commands=['start'])
 def start(message):
