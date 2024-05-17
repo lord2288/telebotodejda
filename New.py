@@ -65,7 +65,7 @@ def pre0(message):
     zapros = ''
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row(types.KeyboardButton('Мужская'), types.KeyboardButton('Женская'))
-    bot.send_message(message.chat.id, 'Выберите пол.', reply_markup=markup)
+    bot.send_message(message.chat.id, 'Выберите пол на кого хотите сгенерировать одежду.', reply_markup=markup)
     bot.register_next_step_handler(message, pre1)
 
 def pre1(message):
@@ -73,7 +73,7 @@ def pre1(message):
     if message.text in ['Мужская', 'Женская']:
         zapros += f'белый фон. на фоне {message.text.lower()} в одежде, '
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        styles = ['спортивный', 'классический', 'кэжуал', 'хиппи', 'гламур', 'романтический']
+        styles = ['Спортивный', 'Классический', 'Кэжуал', 'Хиппи', 'Гламур', 'Романтический']
         for style in styles:
             markup.add(types.KeyboardButton(style))
         bot.send_message(message.chat.id, 'Выберите стиль.', reply_markup=markup)
@@ -83,9 +83,9 @@ def pre1(message):
 
 def pre2(message):
     global zapros
-    zapros += f'в {message.text} стиле, '
+    zapros += f'в {message.text} Стиле, '
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    categories = ['верхняя одежда-пальто', 'верхняя одежда-футболка', 'нижняя одежда-шорты']
+    categories = ['Верхняя одежда-пальто', 'Верхняя одежда-футболка', 'Нижняя одежда-шорты']
     for category in categories:
         markup.add(types.KeyboardButton(category))
     bot.send_message(message.chat.id, 'Выберите категорию одежды.', reply_markup=markup)
@@ -94,12 +94,12 @@ def pre2(message):
 def pre3(message):
     global zapros
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    if message.text == 'верхняя одежда-пальто':
-        items = ['куртка', 'плащ', 'жилетка', 'ветровка']
-    elif message.text == 'верхняя одежда-футболка':
-        items = ['поло', 'свитер', 'блузка', 'рубашка', 'свитшот', 'водолазка', 'топ']
-    elif message.text == 'нижняя одежда-шорты':
-        items = ['шорты', 'брюки', 'юбка', 'джинсы']
+    if message.text == 'Верхняя одежда-пальто':
+        items = ['Куртка', 'Плащ', 'Жилетка', 'Ветровка']
+    elif message.text == 'Верхняя одежда-футболка':
+        items = ['Поло', 'Свитер', 'Блузка', 'Рубашка', 'Свитшот', 'Водолазка', 'Топ']
+    elif message.text == 'Нижняя одежда-шорты':
+        items = ['Шорты', 'Брюки', 'Юбка', 'Джинсы']
     else:
         pre2(message)
         return
@@ -118,9 +118,9 @@ def pre4(message):
 
 def pre5(message):
     global zapros
-    zapros += f'цвет {message.text}, '
+    zapros += f'Цвет {message.text}, '
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    footwear = ['кроссовки', 'туфли', 'лоферы', 'сапоги', 'ботинки']
+    footwear = ['Кроссовки', 'Туфли', 'Лоферы', 'Сапоги', 'Ботинки']
     for item in footwear:
         markup.add(types.KeyboardButton(item))
     bot.send_message(message.chat.id, 'Выберите обувь.', reply_markup=markup)
@@ -128,24 +128,27 @@ def pre5(message):
 
 def pre6(message):
     global zapros
-    zapros += f'на ногах {message.text}.'
-    bot.send_message(message.chat.id, 'Подождите немного...')
+    zapros += f'На ногах {message.text}.'
+    bot.send_message(message.chat.id, """Подождите немного...
+Генерация изображения может составлять минуту """)
     filename = generate_image_from_text(zapros)
     if filename:
         send_picture(message, filename)
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.row(types.KeyboardButton('перегенерировать'), types.KeyboardButton('задать вид заново'))
+    markup.row(types.KeyboardButton('Перегенерировать'), types.KeyboardButton('Задать вид заново'))
     bot.send_message(message.chat.id, 'Выберите действие.', reply_markup=markup)
     bot.register_next_step_handler(message, pre7)
 
 def pre7(message):
     global zapros
-    if message.text == 'перегенерировать':
-        bot.send_message(message.chat.id, 'Подождите немного...')
+    if message.text == 'Перегенерировать':
+        bot.send_message(message.chat.id, """Подождите немного...
+Генерация изображения может составлять минуту """)
+
         filename = generate_image_from_text(zapros)
         if filename:
             send_picture(message, filename)
-    elif message.text == 'задать вид заново':
+    elif message.text == 'Задать вид заново.':
         zapros = ''
         pre0(message)
     else:
