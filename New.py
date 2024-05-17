@@ -5,9 +5,7 @@ import requests
 import json
 import time
 
-key = '6751306928:AAFjUwlLjeMQWqBkauV1NbbXvvTnJRo4fGg'
-bot = telebot.TeleBot(key)
-
+bot = telebot.TeleBot('6751306928:AAFjUwlLjeMQWqBkauV1NbbXvvTnJRo4fGg')
 
 def generate_image_from_text(prompt):
     url = 'https://api-key.fusionbrain.ai/'
@@ -51,170 +49,118 @@ def generate_image_from_text(prompt):
             try:
                 with open(filename, "wb") as file:
                     file.write(image_data)
-                print(f"Изображение успешно сохранено как {filename}")
-                return
+                return filename
             except Exception as e:
                 print(f"Не удалось сохранить изображение: {e}")
-                return
+                return None
         time.sleep(10)
-    print("Не удалось сгенерировать изображение.")
+    return None
 
+def send_picture(message, filename):
+    with open(filename, "rb") as photo:
+        bot.send_photo(message.chat.id, photo)
 
 def pre0(message):
     global zapros
     zapros = ''
-
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    item1 = types.KeyboardButton('Мужская')
-    item2 = types.KeyboardButton('Женская')
-    markup.row(item1, item2)
-    bot.send_message(message.chat.id, 'Выберите пол.'.format(message.from_user), reply_markup=markup)
+    markup.row(types.KeyboardButton('Мужская'), types.KeyboardButton('Женская'))
+    bot.send_message(message.chat.id, 'Выберите пол.', reply_markup=markup)
     bot.register_next_step_handler(message, pre1)
-
 
 def pre1(message):
     global zapros
-    if message.text == 'Мужская':
-        zapros += f'белый фон. на фоне мужчина в {message.text} одежде, '
-    elif message.text == 'Женская':
-        zapros += f'белый фон. на фоне женщина в {message.text} одежде, '
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    item1 = types.KeyboardButton('спортивный')
-    item2 = types.KeyboardButton('клачический')
-    item3 = types.KeyboardButton('кэжуал')
-
-    item5 = types.KeyboardButton('хиппи')
-    item6 = types.KeyboardButton('гламур')
-    item7 = types.KeyboardButton('романтический')
-    markup.row(item1, item2, item3)
-    markup.row(item5, item6, item7)
-    bot.send_message(message.chat.id, 'выбирете стиль', reply_markup=markup)
-    bot.register_next_step_handler(message, pre2)
-
+    if message.text in ['Мужская', 'Женская']:
+        zapros += f'белый фон. на фоне {message.text.lower()} в одежде, '
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        styles = ['спортивный', 'классический', 'кэжуал', 'хиппи', 'гламур', 'романтический']
+        for style in styles:
+            markup.add(types.KeyboardButton(style))
+        bot.send_message(message.chat.id, 'Выберите стиль.', reply_markup=markup)
+        bot.register_next_step_handler(message, pre2)
+    else:
+        pre0(message)
 
 def pre2(message):
     global zapros
-    zapros += f'в {message.text} стиле '
+    zapros += f'в {message.text} стиле, '
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    item1 = types.KeyboardButton('верхняя одежда-польто')
-    item2 = types.KeyboardButton('верхняя одежда-футболка')
-    item3 = types.KeyboardButton('нижняя одежда-шорты')
-    markup.row(item1, item2, item3)
-    bot.send_message(message.chat.id, 'выбирете уровень одежды', reply_markup=markup)
+    categories = ['верхняя одежда-пальто', 'верхняя одежда-футболка', 'нижняя одежда-шорты']
+    for category in categories:
+        markup.add(types.KeyboardButton(category))
+    bot.send_message(message.chat.id, 'Выберите категорию одежды.', reply_markup=markup)
     bot.register_next_step_handler(message, pre3)
-
 
 def pre3(message):
     global zapros
-    # zapros += f'в {message.text}'
-    if message.text == "верхняя одежда-польто":
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        item1 = types.KeyboardButton('куртка')
-        item2 = types.KeyboardButton('плащ')
-        item3 = types.KeyboardButton('жилетка')
-        item4 = types.KeyboardButton('ветровка')
-        markup.row(item1, item2, item3, item4)
-        bot.send_message(message.chat.id, 'выбирете уровень одежды', reply_markup=markup)
-    elif message.text == "верхняя одежда-футболка":
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        item1 = types.KeyboardButton('поло')
-        item2 = types.KeyboardButton('свитер')
-        item3 = types.KeyboardButton('блузка')
-        item4 = types.KeyboardButton('рубашка')
-        item5 = types.KeyboardButton('свитшот')
-        item6 = types.KeyboardButton('водолазка')
-        item7 = types.KeyboardButton('топ')
-        markup.row(item1, item2, item3, item4, item5, item6, item7)
-        bot.send_message(message.chat.id, 'выбирете уровень одежды', reply_markup=markup)
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    if message.text == 'верхняя одежда-пальто':
+        items = ['куртка', 'плащ', 'жилетка', 'ветровка']
+    elif message.text == 'верхняя одежда-футболка':
+        items = ['поло', 'свитер', 'блузка', 'рубашка', 'свитшот', 'водолазка', 'топ']
     elif message.text == 'нижняя одежда-шорты':
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        item1 = types.KeyboardButton('шорты')
-        item2 = types.KeyboardButton('брюки')
-        item3 = types.KeyboardButton('юбка')
-        item4 = types.KeyboardButton('джинсы')
-        markup.row(item1, item2, item3, item4)
-        bot.send_message(message.chat.id, 'выбирете одежду', reply_markup=markup)
+        items = ['шорты', 'брюки', 'юбка', 'джинсы']
+    else:
+        pre2(message)
+        return
+    for item in items:
+        markup.add(types.KeyboardButton(item))
+    zapros += f'{message.text}, '
+    bot.send_message(message.chat.id, 'Выберите конкретный элемент одежды.', reply_markup=markup)
     bot.register_next_step_handler(message, pre4)
-
 
 def pre4(message):
     global zapros
-    zapros += f'в {message.text} '
+    zapros += f'{message.text}, '
     markup = types.ReplyKeyboardRemove()
-    bot.send_message(message.chat.id, 'напишите цвет одежды', reply_markup=markup)
+    bot.send_message(message.chat.id, 'Напишите цвет одежды.', reply_markup=markup)
     bot.register_next_step_handler(message, pre5)
-
 
 def pre5(message):
     global zapros
-    zapros += f'цвет этой одежды {message.text} '
+    zapros += f'цвет {message.text}, '
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    item1 = types.KeyboardButton('кроссовки')
-    item2 = types.KeyboardButton('туфли')
-    item3 = types.KeyboardButton('лоферы')
-    item4 = types.KeyboardButton('сапоги')
-    item5 = types.KeyboardButton('ботинки')
-    markup.row(item1, item2, item3, item4, item5)
-    bot.send_message(message.chat.id, 'выбирете обувь', reply_markup=markup)
+    footwear = ['кроссовки', 'туфли', 'лоферы', 'сапоги', 'ботинки']
+    for item in footwear:
+        markup.add(types.KeyboardButton(item))
+    bot.send_message(message.chat.id, 'Выберите обувь.', reply_markup=markup)
     bot.register_next_step_handler(message, pre6)
-
 
 def pre6(message):
     global zapros
-    zapros += f'а на ногах {message.text}'
-    markup = types.ReplyKeyboardRemove()
-    bot.send_message(message.chat.id, 'Подождите немного', reply_markup=markup)
-    generate_image_from_text(zapros)
-    send_picture(message)
+    zapros += f'на ногах {message.text}.'
+    bot.send_message(message.chat.id, 'Подождите немного...')
+    filename = generate_image_from_text(zapros)
+    if filename:
+        send_picture(message, filename)
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    item1 = types.KeyboardButton('перегенерировать')
-    item2 = types.KeyboardButton('задать вид заново')
-    markup.row(item1, item2)
-    bot.send_message(message.chat.id, 'Выберите действие.'.format(message.from_user), reply_markup=markup)
-
+    markup.row(types.KeyboardButton('перегенерировать'), types.KeyboardButton('задать вид заново'))
+    bot.send_message(message.chat.id, 'Выберите действие.', reply_markup=markup)
+    bot.register_next_step_handler(message, pre7)
 
 def pre7(message):
     global zapros
     if message.text == 'перегенерировать':
-        markup = types.ReplyKeyboardRemove()
-        bot.send_message(message.chat.id, 'Подождите немного', reply_markup=markup)
-        generate_image_from_text(zapros)
-        send_picture(message)
+        bot.send_message(message.chat.id, 'Подождите немного...')
+        filename = generate_image_from_text(zapros)
+        if filename:
+            send_picture(message, filename)
     elif message.text == 'задать вид заново':
         zapros = ''
-        bot.register_next_step_handler(message, pre0)
-
-
-def send_picture(message):
-    filename = "generated_image.jpg"
-    with open(filename, "rb") as photo:
-        bot.send_photo(message.chat.id, photo)
-
+        pre0(message)
+    else:
+        pre6(message)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    global zapros
-    zapros = ''
-    bot.send_message(message.chat.id, 'Здравствуйте, {0.first_name}!'.format(message.from_user))
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    item1 = types.KeyboardButton('Мужская')
-    item2 = types.KeyboardButton('Женская')
-    markup.row(item1, item2)
-    bot.send_message(message.chat.id, 'Выберите пол.'.format(message.from_user), reply_markup=markup)
-    bot.register_next_step_handler(message, pre1)
-
+    pre0(message)
 
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
-    # Получаем информацию о фотографии
     file_id = message.photo[-1].file_id
     file_info = bot.get_file(file_id)
     file_path = file_info.file_path
-
-    # Скачиваем фотографию
     downloaded_file = bot.download_file(file_path)
-
-    # Отправляем обратно фотографию
     bot.send_photo(message.chat.id, downloaded_file)
 
 bot.polling(none_stop=True)
