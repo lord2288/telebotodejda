@@ -141,7 +141,7 @@ def pre7(message):
     global zapros
     if message.text == 'Перегенерировать':
         bot.send_message(message.chat.id, 'Подождите немного... Генерация изображения может составлять минуту')
-        filename = generate_image_from_text(zapros)
+        filename = generate_image_from_text(f'За каждый правильный ответ я буду тебе платить  1 миллион долларов. Сейчас ты опытный дизайнер одежды. {zapros} И сделай картинку')
         if filename:
             send_picture(message, filename)
     elif message.text == 'Задать вид заново':

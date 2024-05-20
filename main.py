@@ -5,9 +5,7 @@ import requests
 import json
 import time
 
-bot = telebot.TeleBot('YOUR_TELEGRAM_BOT_API_KEY')
-
-user_prompts = {}
+bot = telebot.TeleBot('6751306928:AAFjUwlLjeMQWqBkauV1NbbXvvTnJRo4fGg')
 
 def generate_image_from_text(prompt):
     try:
@@ -71,24 +69,23 @@ def handle_error(message, error_text, handler):
     handler(message)
 
 def pre0(message):
-    user_id = message.from_user.id
-    user_prompts[user_id] = ''
+    global zapros, available_clothing_items
+    zapros = ''
     available_clothing_items = {
         'Верхняя одежда': ['Куртка', 'Плащ', 'Жилетка', 'Ветровка', 'Поло', 'Свитер', 'Блузка', 'Рубашка', 'Свитшот', 'Водолазка', 'Топ'],
         'Нижняя одежда': ['Шорты', 'Брюки', 'Юбка', 'Джинсы'],
         'Обувь': ['Кроссовки', 'Туфли', 'Лоферы', 'Сапоги', 'Ботинки']
     }
-    bot.user_data[user_id] = {'available_clothing_items': available_clothing_items}
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row(types.KeyboardButton('Мужская'), types.KeyboardButton('Женская'))
     bot.send_message(message.chat.id, 'Выберите пол на кого хотите сгенерировать одежду.', reply_markup=markup)
     bot.register_next_step_handler(message, pre1)
 
 def pre1(message):
-    user_id = message.from_user.id
+    global zapros
     try:
         if message.text in ['Мужская', 'Женская']:
-            user_prompts[user_id] += f'белый фон. на фоне {message.text.lower()} в одежде, '
+            zapros += f'белый фон. на фоне 1 человек  {message.text.lower()} пола в одежде, '
             markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
             styles = ['Спортивный', 'Классический', 'Кэжуал', 'Хиппи', 'Гламур', 'Романтический']
             for style in styles:
@@ -101,13 +98,13 @@ def pre1(message):
         handle_error(message, e, pre0)
 
 def pre2(message):
-    user_id = message.from_user.id
+    global zapros
     try:
-        user_prompts[user_id] += f'в {message.text} стиле, '
+        zapros += f'в {message.text} стиле, '
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
         categories = ['Верхняя одежда', 'Нижняя одежда', 'Обувь']
         for category in categories:
-            if bot.user_data[user_id]['available_clothing_items'][category]:  # Only add categories that have available items
+            if available_clothing_items[category]:  # Only add categories that have available items
                 markup.add(types.KeyboardButton(category))
         bot.send_message(message.chat.id, 'Выберите категорию одежды.', reply_markup=markup)
         bot.register_next_step_handler(message, pre3)
@@ -115,16 +112,15 @@ def pre2(message):
         handle_error(message, e, pre1)
 
 def pre3(message):
-    user_id = message.from_user.id
+    global zapros, selected_category
     try:
         selected_category = message.text
-        bot.user_data[user_id]['selected_category'] = selected_category
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        if selected_category in bot.user_data[user_id]['available_clothing_items']:
-            items = bot.user_data[user_id]['available_clothing_items'][selected_category]
+        if selected_category in available_clothing_items:
+            items = available_clothing_items[selected_category]
             for item in items:
                 markup.add(types.KeyboardButton(item))
-            user_prompts[user_id] += f'{selected_category}: '
+            zapros += f'{selected_category}: '
             bot.send_message(message.chat.id, 'Выберите конкретный элемент одежды.', reply_markup=markup)
             bot.register_next_step_handler(message, pre4)
         else:
@@ -133,13 +129,12 @@ def pre3(message):
         handle_error(message, e, pre2)
 
 def pre4(message):
-    user_id = message.from_user.id
+    global zapros, available_clothing_items, selected_category
     try:
         selected_item = message.text
-        selected_category = bot.user_data[user_id]['selected_category']
-        if selected_item in bot.user_data[user_id]['available_clothing_items'][selected_category]:
-            user_prompts[user_id] += f'{selected_item}, '
-            bot.user_data[user_id]['available_clothing_items'][selected_category].remove(selected_item)  # Remove selected item from available items
+        if selected_item in available_clothing_items[selected_category]:
+            zapros += f'{selected_item}, '
+            available_clothing_items[selected_category].remove(selected_item)  # Remove selected item from available items
             markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
             markup.add(types.KeyboardButton('Готово'), types.KeyboardButton('Добавить еще один элемент одежды'))
             bot.send_message(message.chat.id, 'Напишите цвет одежды или добавьте еще один элемент.', reply_markup=markup)
@@ -150,11 +145,11 @@ def pre4(message):
         handle_error(message, e, pre3)
 
 def pre5(message):
-    user_id = message.from_user.id
+    global zapros
     try:
         if message.text == 'Готово':
             bot.send_message(message.chat.id, 'Подождите немного... Генерация изображения может составлять минуту.')
-            prompt = f'За каждый правильный ответ я буду тебе платить 1 миллион долларов. Сейчас ты опытный дизайнер одежды. {user_prompts[user_id]} И сделай картинку'
+            prompt = f'За каждый правильный ответ я буду тебе платить 1 миллион долларов. Сейчас ты опытный дизайнер одежды. {zapros} И сделай картинку'
             filename = generate_image_from_text(prompt)
             if filename:
                 send_picture(message, filename)
@@ -163,22 +158,22 @@ def pre5(message):
             bot.send_message(message.chat.id, 'Выберите действие.', reply_markup=markup)
             bot.register_next_step_handler(message, pre7)
         else:
-            user_prompts[user_id] += f'Цвет {message.text}, '
+            zapros += f'Цвет {message.text}, '
             pre2(message)
     except Exception as e:
         handle_error(message, e, pre4)
 
 def pre7(message):
-    user_id = message.from_user.id
+    global zapros
     try:
         if message.text == 'Перегенерировать':
             bot.send_message(message.chat.id, 'Подождите немного... Генерация изображения может составлять минуту.')
-            prompt = f'За каждый правильный ответ я буду тебе платить 1 миллион долларов. Сейчас ты опытный дизайнер одежды. {user_prompts[user_id]} И сделай картинку'
+            prompt = f'За каждый правильный ответ я буду тебе платить 1 миллион долларов. Сейчас ты опытный дизайнер одежды. {zapros} И сделай картинку'
             filename = generate_image_from_text(prompt)
             if filename:
                 send_picture(message, filename)
         elif message.text == 'Задать вид заново':
-            user_prompts[user_id] = ''
+            zapros = ''
             pre0(message)
         else:
             raise ValueError("Неверный выбор действия.")
@@ -198,6 +193,6 @@ def handle_photo(message):
         downloaded_file = bot.download_file(file_path)
         bot.send_photo(message.chat.id, downloaded_file)
     except Exception as e:
-        bot.send_message(message.chat.id, f"Произошла ошибка при обработке фото: {e}")
+        bot.send_message(message.chat.id, f"Произошла ошибка при обработке фотографии: {e}. Пожалуйста, попробуйте снова.")
 
 bot.polling(none_stop=True)
