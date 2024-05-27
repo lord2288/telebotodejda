@@ -4,12 +4,82 @@ import base64
 import requests
 import json
 import time
+import sqlite3 as sq
+import datetime
 
 bot = telebot.TeleBot('6751306928:AAFjUwlLjeMQWqBkauV1NbbXvvTnJRo4fGg')
 
 zapros = ''
 available_clothing_items = {}
 gender = ''
+
+def proverka(message):
+    db = sq.connect('olat.db')
+    c = db.cursor()
+
+    # Создание таблицы, если её нет
+    c.execute('''CREATE TABLE IF NOT EXISTS my_table (
+    id TEXT,
+    date_start TEXT,
+    date_end TEXT
+    )
+    ''')
+    user = message.chat.id
+    print(type(user))
+
+    c.execute("SELECT COUNT(*) FROM my_table WHERE id=?", (user, ))
+    count = c.fetchone()[0]
+    # Если значения нет в базе данных, добавляем его
+    if count == 0:
+        return 0
+    else:
+        return 1
+
+def reg(message):
+    print('reg')
+    db = sq.connect('olat.db')
+    if message.text == 'купить подписку':
+        c = db.cursor()
+
+        # Создание таблицы, если её нет
+        c.execute('''CREATE TABLE IF NOT EXISTS my_table (
+        id TEXT,
+        date_start TEXT,
+        date_end TEXT,
+        mail TEXT
+        )
+        ''')
+
+        user = message.chat.id
+        a = datetime.date.today()
+        if a.month == 12:
+            a_next = a.replace(year=a.year + 1, month=1)
+        else:
+            a_next = a.replace(month=a.month + 1)
+            c.execute("INSERT INTO my_table (id, date_start, date_end) VALUES (?, ?, ?)",(user, a.isoformat(), a_next.isoformat()))
+            db.commit()
+            db.close()
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        styles = ["Начать генерация","Информация о подипске", "Tex.поддежка" ]
+        for style in styles:
+            markup.add(types.KeyboardButton(style))
+        bot.send_message(message.chat.id, 'Выберите действие.', reply_markup=markup)
+        bot.register_next_step_handler(message, start)
+
+def skolko(id):
+    print('skolko')
+    user = id
+    db = sq.connect('olat.db')
+    c = db.cursor()
+    c.execute("SELECT date_start, date_end FROM my_table WHERE id=?", (user,))
+    result = c.fetchone()
+    date_start = datetime.datetime.strptime(result[0], '%Y-%m-%d').date()
+    date_end = datetime.datetime.strptime(result[1], '%Y-%m-%d').date()
+    print(date_start, date_end)
+    remaining_days = (date_end - date_start)
+    db.commit()
+    db.close()
+    return f'Осталось дней: {remaining_days.days}'
 
 def generate_image_from_text(prompt):
     try:
@@ -71,6 +141,21 @@ def send_picture(message, filename):
 def handle_error(message, error_text, handler):
     bot.send_message(message.chat.id, f"Произошла ошибка: {error_text}. Пожалуйста, попробуйте снова.")
     handler(message)
+
+def start(message):
+    print('start')
+    print(message.text)
+    if message.text == "Начать генерация":
+        bot.register_next_step_handler(message, pre0)
+    elif message.text == "Информация о подипске":
+        bot.send_message(message.chat.id, skolko(message.chat.id))
+        bot.register_next_step_handler(message, start)
+    elif message.text == "Tex.поддежка":
+        bot.send_message(message.chat.id, 'здесь mail человека')
+        bot.register_next_step_handler(message, start)
+    else:
+        bot.send_message(message.chat.id, 'неизвестная команда')
+        bot.register_next_step_handler(message, start)
 
 def pre0(message):
     global zapros, available_clothing_items, gender
@@ -173,6 +258,7 @@ def pre5(message):
             prompt = f'Изобразите 1 человека {gender} пола в следующей одежде: {zapros}'
             print(prompt)
             filename = generate_image_from_text(prompt)
+            print('gotovo')
             if filename:
                 send_picture(message, filename)
             markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -204,8 +290,21 @@ def pre7(message):
         handle_error(message, e, pre7)
 
 @bot.message_handler(commands=['start'])
-def start(message):
+def startt(message):
+    # if proverka(message) == 1:
+    #     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    #     styles = ["Начать генерация", "Информация о подипске", "Tex.поддежка"]
+    #     for style in styles:
+    #         markup.add(types.KeyboardButton(style))
+    #     bot.send_message(message.chat.id, 'Выберите действие.', reply_markup=markup)
+    #     bot.register_next_step_handler(message, start)
+    # else:
+    #     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    #     markup.row(types.KeyboardButton('купить подписку'))
+    #     bot.send_message(message.chat.id, 'вы не купили подписку', reply_markup=markup)
+    #     bot.register_next_step_handler(message, reg)
     pre0(message)
+
 
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
