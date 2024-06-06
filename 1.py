@@ -79,15 +79,15 @@ def send_image(chat_id, filename):
         bot.send_photo(chat_id, photo)
 @bot.message_handler(commands=['start'])
 def start(message):
-    # user_id = message.chat.id
-    # if is_subscribed(user_id):
-    #     show_main_menu(message)
-    # else:
-    #     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    #     markup.row(types.KeyboardButton('купить подписку'))
-    #     bot.send_message(user_id, 'вы не купили подписку', reply_markup=markup)
-    #     bot.register_next_step_handler(message, handle_subscription)
-    bot.register_next_step_handler(message, show_main_menu)
+    user_id = message.chat.id
+    if is_subscribed(user_id):
+        show_main_menu(message)
+    else:
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        markup.row(types.KeyboardButton('купить подписку'))
+        bot.send_message(user_id, 'вы не купили подписку', reply_markup=markup)
+        bot.register_next_step_handler(message, handle_subscription)
+    # bot.register_next_step_handler(message, show_main_menu)
 @bot.message_handler(func=lambda message: True)
 def echo_all(message):
     bot.send_message(message.chat.id, 'Извините за предоставленные неудобства, начните пожалуйста заново.')
