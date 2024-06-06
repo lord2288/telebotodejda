@@ -1,6 +1,6 @@
 import asyncio
 from aiogram import Bot, Dispatcher, F, Router
-from aiogram.types import message
+from aiogram.types import message, FSInputFile
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
@@ -64,8 +64,13 @@ class Generate(StatesGroup):
 
     shoes = State()
     shoes_Color = State()
+    True_Or_False = State()
 
-@router.message(CommandStart())
+@router.message(CommandStart() or F.text == "Вернутся в главное меню")
+async def cmd_start(message: message):
+    await message.answer('Здравствуйте!', reply_markup=kb.main)
+router.message(F.text == "Вернутся в главное меню")
+@router.message(F.text == "Вернутся в главное меню")
 async def cmd_start(message: message):
     await message.answer('Здравствуйте!', reply_markup=kb.main)
 @router.message(F.text == "начать генерацию")
@@ -121,36 +126,27 @@ async def Gen_gender(message: message, state: FSMContext):
     await message.answer('выберите цвет одежды')
 
 @router.message(Generate.shoes_Color)
-async def shoes_Color(message: message, state: FSMContext):
+async def shoes_Color(message: message, state: FSMContext, bot: Bot):
     await state.update_data(shoes_Color=message.text)
     data = await state.get_data()
-    generate_image_from_text(f'изобрази человека {data["gender"]} пола, в {data["style"]} стиле. в {data["outerwear"]} {data["outerwear_Color"]} цвете, в {data["underwear"]} {data["underwear_Color"]} цвете, в {data["shoes"]} {data["shoes_Color"]} цвете')
-    await message.answer_photo(photo='generated_image.jpg', reply_markup=kb.gotovo)
+    await message.answer('Подождите идёт генерация.')
+    generate_image_from_text(f'изобрази человека на белом фоне {data["gender"]} пола, в {data["style"]} стиле. в {data["outerwear"]} {data["outerwear_Color"]} цвете, в {data["underwear"]} {data["underwear_Color"]} цвете, в {data["shoes"]} {data["shoes_Color"]} цвете')
+    photo = FSInputFile(path='/home/trolololo22/PycharmProjects/telebotodejda/generated_image.jpg')
+    await bot.send_photo(message.chat.id, photo=photo, reply_markup=kb.gotovo)
+    await state.set_state(Generate.True_Or_False)
 
-@router.message(F.text == "Перегенерировать" or F.text == 'задать вид заново')
-async def trueOrFalse(message: message, state: FSMContext):
+
+@router.message(Generate.True_Or_False)
+async def trueOrFalse(message: message, state: FSMContext, bot: Bot):
     if message.text == "Перегенерировать":
         data = await state.get_data()
+        await message.answer('Подождите идёт генерация.')
         generate_image_from_text(
             f'изобрази человека {data["gender"]} пола, в {data["style"]} стиле. в {data["outerwear"]} {data["outerwear_Color"]} цвете, в {data["underwear"]} {data["underwear_Color"]} цвете, в {data["shoes"]} {data["shoes_Color"]} цвете')
-        await message.answer_photo(photo='generated_image.jpg', reply_markup=kb.gotovo)
+        photo = FSInputFile(path='/home/trolololo22/PycharmProjects/telebotodejda/generated_image.jpg')
+        await bot.send_photo(message.chat.id, photo=photo, reply_markup=kb.gotovo)
     elif message.text == "задать вид заново":
+        await state.set_state(Generate.gender)
         await message.answer('выберите пол', reply_markup=kb.gender)
-
-
-# async def send_photo(message: types.Message):
-#    photo_path = os.path.join(os.getcwd(), 'photo_name.jpg')  # путь к вашей картинке
-#    with open(photo_path, 'rb') as photo:
-#       await bot.send_photo(message.chat.id, photo)
-
- # gender = State()
- #    style = State()
- #
- #    outerwear = State()
- #    outerwear_Color = State()
- #
- #    underwear = State()
- #    underwear_Color = State()
- #
- #    shoes = State()
- #    shoes_Color = State()
+    elif message.text == "Вернутся в главное меню":
+        await state.clear()

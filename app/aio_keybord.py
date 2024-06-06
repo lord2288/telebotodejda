@@ -71,6 +71,10 @@ shoes = ReplyKeyboardMarkup(keyboard=[
 gotovo = ReplyKeyboardMarkup(keyboard=[[
     KeyboardButton(text='Перегенерировать'),
     KeyboardButton(text='задать вид заново')
-]],
+],
+[
+    KeyboardButton(text='Вернутся в главное меню'),
+]
+],
     resize_keyboard=True)
 
