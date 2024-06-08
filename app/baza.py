@@ -1,7 +1,7 @@
 import sqlite3 as sq
 import datetime
 
-db = sq.connect('olat.db')
+db = sq.connect('oplat.db')
 c = db.cursor()
 
 # Создание таблицы, если её нет
@@ -25,7 +25,8 @@ def proverka(idd):
         return 0
     else:
         return 1
-def reg(idd, ):
+
+def reg(idd, payment_id):
     db = sq.connect('olat.db')
     c = db.cursor()
     user = idd
@@ -35,7 +36,7 @@ def reg(idd, ):
     else:
         a_next = a.replace(month=a.month + 1)
     c.execute("INSERT INTO my_table (id, date_start, date_end, payment_id) VALUES (?, ?, ?, ?)",
-              (user, a.isoformat(), a_next.isoformat()))
+              (user, a.isoformat(), a_next.isoformat(), payment_id))
     db.commit()
     db.close()
 def check(id):

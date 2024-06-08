@@ -7,6 +7,8 @@ from aiogram.fsm.context import FSMContext
 from app.generate_photo import generate_image_from_text
 import app.aio_keybord as kb
 from app.key import email
+from app.baza import proverka, check
+from app.you_cassa import create
 
 router = Router()
 
@@ -31,17 +33,16 @@ class oformlenie(StatesGroup):
 
 @router.message(CommandStart())
 async def cmd_start(message: message, state: FSMContext):
-    if app.baza.proverka(message.chat.id) == 1:
+    if proverka(message.chat.id) == 1:
         await message.answer('Здравствуйте!', reply_markup=kb.main)
     else:
         await state.set_state(oformlenie.oform)
         await message.answer('Здравствуйте! Вам нужно оформить подписку.', reply_markup=kb.podpiska)
 
-@router.message(oformlenie.oform)
-async def oform(message: message, state: FSMContext):
-    await state.update_data(style=message.text)
-    await state.set_state(oformlenie.t_or_f)
-    await message.answer('выберите верхную одежду', reply_markup=kb.outerwear)
+@router.message(F.text == 'Оформить подписку')
+async def oform(message: message):
+    url = create(message.chat.id)
+    await message.answer(url)
 
 
 
@@ -137,4 +138,4 @@ async def teh_pomosh(message: message):
 
 @router.message(F.text == "проверить подписку")
 async def teh_pomosh(message: message):
-    await message.answer(app.baza.check(message.id))
+    await message.answer(check(message.id))
