@@ -1,9 +1,18 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from app.you_cassa import create
 
 main = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='начать генерацию')],
                                      [KeyboardButton(text='проверить подписку'),
                                       KeyboardButton(text='Tex.поддежка')]],
                            resize_keyboard=True)
+
+
+podpiska = ReplyKeyboardMarkup(keyboard=[[
+    KeyboardButton(text='Оформить подписку'),
+    KeyboardButton(text='Проверить подписку')
+]],
+    resize_keyboard=True)
+
 gender = ReplyKeyboardMarkup(keyboard=[[
     KeyboardButton(text='мужчина'),
     KeyboardButton(text='женщина')

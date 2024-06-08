@@ -1,11 +1,7 @@
 import asyncio
-from aiogram import Bot, Dispatcher, F
-from aiogram.types import message
-from aiogram.filters import CommandStart, Command
-import key
-
+from aiogram import Bot, Dispatcher
+from app import key
 from app.hendlers import router
-
 
 
 bot = Bot(token=key.telebot_api)

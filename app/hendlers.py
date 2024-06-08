@@ -4,51 +4,9 @@ from aiogram.types import message, FSInputFile
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
-import base64
-import json
-import requests
-import time
-
+from app.generate_photo import generate_image_from_text
 import app.aio_keybord as kb
-
-def generate_image_from_text(prompt):
-    try:
-        url = 'https://api-key.fusionbrain.ai/'
-        api_key = 'C620606DC592BF60C4462E27F5309E12'
-        secret_key = '40D31C36DFDBD37DD3C385A7B5C143B4'
-        headers = {'X-Key': f'Key {api_key}', 'X-Secret': f'Secret {secret_key}'}
-        response = requests.get(f"{url}key/api/v1/models", headers=headers)
-        response.raise_for_status()
-        model_id = response.json()[0]['id']
-        params = {
-            "type": "GENERATE",
-            "numImages": 1,
-            "width": 1024,
-            "height": 1024,
-            "generateParams": {"query": prompt}
-        }
-        data = {
-            'model_id': (None, model_id),
-            'params': (None, json.dumps(params), 'application/json')
-        }
-        response = requests.post(f"{url}key/api/v1/text2image/run", headers=headers, files=data)
-        response.raise_for_status()
-        uuid = response.json()['uuid']
-        for _ in range(10):
-            response = requests.get(f"{url}key/api/v1/text2image/status/{uuid}", headers=headers)
-            response.raise_for_status()
-            data = response.json()
-            if data['status'] == 'DONE':
-                image_data = base64.b64decode(data['images'][0])
-                filename = "generated_image.jpg"
-                with open(filename, "wb") as file:
-                    file.write(image_data)
-                return filename
-            time.sleep(10)
-        return None
-    except Exception as e:
-        print(f"Error generating image: {e}")
-        return None
+from app.key import email
 
 router = Router()
 
@@ -66,10 +24,28 @@ class Generate(StatesGroup):
     shoes_Color = State()
     True_Or_False = State()
 
-@router.message(CommandStart() or F.text == "Вернутся в главное меню")
-async def cmd_start(message: message):
-    await message.answer('Здравствуйте!', reply_markup=kb.main)
-router.message(F.text == "Вернутся в главное меню")
+class oformlenie(StatesGroup):
+    oform = State()
+    t_or_f = State()
+
+
+@router.message(CommandStart())
+async def cmd_start(message: message, state: FSMContext):
+    if app.baza.proverka(message.chat.id) == 1:
+        await message.answer('Здравствуйте!', reply_markup=kb.main)
+    else:
+        await state.set_state(oformlenie.oform)
+        await message.answer('Здравствуйте! Вам нужно оформить подписку.', reply_markup=kb.podpiska)
+
+@router.message(oformlenie.oform)
+async def oform(message: message, state: FSMContext):
+    await state.update_data(style=message.text)
+    await state.set_state(oformlenie.t_or_f)
+    await message.answer('выберите верхную одежду', reply_markup=kb.outerwear)
+
+
+
+
 @router.message(F.text == "Вернутся в главное меню")
 async def cmd_start(message: message):
     await message.answer('Здравствуйте!', reply_markup=kb.main)
@@ -150,3 +126,15 @@ async def trueOrFalse(message: message, state: FSMContext, bot: Bot):
         await message.answer('выберите пол', reply_markup=kb.gender)
     elif message.text == "Вернутся в главное меню":
         await state.clear()
+
+@router.message(F.text == "Tex.поддежка")
+async def teh_pomosh(message: message):
+    await message.answer(f'Если у вас произошла произошла проблема то пишите сюда: {email}')
+
+@router.message(F.text == "Tex.поддежка")
+async def teh_pomosh(message: message):
+    await message.answer(f'Если у вас произошла произошла проблема то пишите сюда: {email}')
+
+@router.message(F.text == "проверить подписку")
+async def teh_pomosh(message: message):
+    await message.answer(app.baza.check(message.id))
